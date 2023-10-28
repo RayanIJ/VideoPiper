@@ -47,17 +47,15 @@ class VideoPiperService
 
             $process = $this->executeCommand($url); // 0 => resource, 1 => pipes
 
-            if(is_resource($process[0])) { // if yt-dlp process is running
+            if (is_resource($process[0])) { // if yt-dlp process is running
                 $result = $this->getYtDlpJson($process[0], $process[1]); // $process[0] => resource, $process[1] => pipes
                 $yt_dlp_json = $result['yt_dlp_json'];
                 $errors = $result['errors'];
 
-                if($yt_dlp_json !== null)
-                {
+                if ($yt_dlp_json !== null) {
                     $this->recordFileSize($yt_dlp_json['url']);
                     $this->downloadFile($yt_dlp_json['url'], $yt_dlp_json['filename']);
-                }
-                else
+                } else
                     $this->checkForErrors($errors);
             }
         }, 200, [
@@ -73,7 +71,7 @@ class VideoPiperService
      */
     private function executeCommand(string $url): array
     {
-        $cmd = __DIR__.'/../Downloader/yt-dlp --no-check-certificate --force-ipv4 "' . $url.'"';
+        $cmd = __DIR__ . '/../Downloader/yt-dlp --no-check-certificate --force-ipv4 "' . $url . '"';
 
         $yt_dlp = proc_open($cmd, [
             1 => ['pipe', 'w'], // stdout
@@ -98,7 +96,7 @@ class VideoPiperService
         proc_close($yt_dlp);
 
         preg_match('/\{.*\}/', $output, $matches);
-        if(isset($matches[0])){
+        if (isset($matches[0])) {
             $yt_dlp_json = json_decode($matches[0], true) ?? null;
             $this->plugFilenameExtension($yt_dlp_json['filename']);
             $this->title = $yt_dlp_json['filename'];
@@ -129,14 +127,11 @@ class VideoPiperService
      */
     private function checkForErrors($errors): void
     {
-        if($errors && str_contains($errors, '--cookies'))
-        {
+        if ($errors && str_contains($errors, '--cookies')) {
             $this->error = 'Rate limit exceeded';
             $this->pipe();
             die();
-        }
-        else if($errors)
-        {
+        } else if ($errors) {
             $this->error = $errors;
             $this->pipe();
             die();
@@ -181,13 +176,12 @@ class VideoPiperService
             'progress' => function (
                 $downloadTotal, $downloadedBytes,
                 $uploadTotal, $uploadedBytes
-            ) use(&$start_time) {
+            ) use (&$start_time) {
                 $this->totalBytes = $downloadTotal;
                 $this->downloaded = $downloadedBytes;
                 $this->progress = $downloadTotal > 0 ? round(($downloadedBytes / $downloadTotal) * 100) : 0;
 
-                if(microtime(true) - $start_time >= 3)
-                {
+                if (microtime(true) - $start_time >= 3) {
                     $start_time = microtime(true);
                     $this->pipe();
                 }
@@ -218,7 +212,7 @@ class VideoPiperService
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
 
         echo $data . "\n";
-        if(ob_get_level() > 0)
+        if (ob_get_level() > 0)
             ob_flush();
         flush();
     }
