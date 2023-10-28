@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\HandlerStack;
@@ -16,6 +17,8 @@ class VideoPiperService
     private int $progress = 0;
     private string $error;
     private string $link;
+    private string $filename;
+    private string $title;
 
 
     /**
@@ -29,6 +32,8 @@ class VideoPiperService
         ]);
         $this->error = 'null';
         $this->link = 'null';
+        $this->title = 'null';
+        $this->filename = md5(uniqid(rand(), true));
     }
 
     /**
@@ -95,24 +100,26 @@ class VideoPiperService
         preg_match('/\{.*\}/', $output, $matches);
         if(isset($matches[0])){
             $yt_dlp_json = json_decode($matches[0], true) ?? null;
-
-            /**
-             * Shortening the file name due to UNIX file name length limit
-             */
-            $temp = substr($yt_dlp_json['filename'], 0, 50);
-            // remove temp file extension if it exists
-            preg_match('/\.[a-zA-Z0-9]{1,5}$/', $yt_dlp_json['filename'], $matches);
-            $extension = $matches[0] ?? '.mp4';
-            $temp = str_replace($extension, '', $temp);
-            $yt_dlp_json['filename'] = $temp . $extension;
-            /**
-             * End of shortening the file name
-             */
+            $this->plugFilenameExtension($yt_dlp_json['filename']);
+            $this->title = $yt_dlp_json['filename'];
 
             return ['yt_dlp_json' => $yt_dlp_json, 'errors' => $errors];
         }
 
         return ['yt_dlp_json' => null, 'errors' => $errors];
+    }
+
+    /**
+     * @param $filename
+     * @return void
+     * @description shorten the file name due to UNIX file name length limit
+     */
+    function plugFilenameExtension($filename): void
+    {
+        // get the file extension
+        preg_match('/\.[a-zA-Z0-9]{1,5}$/', $filename, $matches);
+        $extension = $matches[0] ?? '.mp4';
+        $this->filename .= $extension;
     }
 
     /**
@@ -163,12 +170,11 @@ class VideoPiperService
 
     /**
      * @param $url
-     * @param $filename
      * @return void
-     * @description download the file from the given url and save it to the original filename
      * @throws GuzzleException
+     * @description download the file from the given url and save it to the original filename
      */
-    private function downloadFile($url, $filename): void
+    private function downloadFile($url): void
     {
         $start_time = microtime(true);
         $response = $this->client->get($url, [
@@ -186,11 +192,11 @@ class VideoPiperService
                     $this->pipe();
                 }
             },
-            'sink' => Storage::disk('public')->path($filename),
+            'sink' => Storage::disk('public')->path($this->filename),
             'verify' => false
         ]);
 
-        $this->link = Storage::disk('public')->url($filename);
+        $this->link = Storage::disk('public')->url($this->filename);
         $this->pipe();
     }
 
@@ -207,6 +213,7 @@ class VideoPiperService
             'progress' => $this->progress,
             'error' => $this->error,
             'link' => $this->link,
+            'title' => $this->title,
         ];
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
 
