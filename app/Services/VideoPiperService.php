@@ -99,7 +99,7 @@ class VideoPiperService
             /**
              * Shortening the file name due to UNIX file name length limit
              */
-            $temp = substr($yt_dlp_json['filename'], 0, 200);
+            $temp = substr($yt_dlp_json['filename'], 0, 50);
             // remove temp file extension if it exists
             preg_match('/\.[a-zA-Z0-9]{1,5}$/', $yt_dlp_json['filename'], $matches);
             $extension = $matches[0] ?? '.mp4';
