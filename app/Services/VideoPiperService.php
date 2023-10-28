@@ -186,7 +186,7 @@ class VideoPiperService
                 $this->downloaded = $downloadedBytes;
                 $this->progress = $downloadTotal > 0 ? round(($downloadedBytes / $downloadTotal) * 100) : 0;
 
-                if(microtime(true) - $start_time >= 2)
+                if(microtime(true) - $start_time >= 3)
                 {
                     $start_time = microtime(true);
                     $this->pipe();
@@ -208,12 +208,12 @@ class VideoPiperService
     function pipe(): void
     {
         $data = [
+            'title' => $this->title,
+            'link' => $this->link,
             'total' => $this->totalBytes,
             'downloaded' => $this->downloaded,
             'progress' => $this->progress,
             'error' => $this->error,
-            'link' => $this->link,
-            'title' => $this->title,
         ];
         $data = json_encode($data, JSON_UNESCAPED_UNICODE);
 
