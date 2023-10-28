@@ -112,7 +112,7 @@ class VideoPiperService
     /**
      * @param $filename
      * @return void
-     * @description shorten the file name due to UNIX file name length limit
+     * @description plug the file extension to the filename
      */
     function plugFilenameExtension($filename): void
     {
